@@ -1,0 +1,220 @@
+<!--
+Car Rental Management System — Frontend
+Tech: HTML, CSS, Vanilla JavaScript
+Connects to Flask backend APIs
+Run: Open index.html with Live Server
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Car Rental System</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+    body { background: #0f172a; color: #e2e8f0; }
+    header { background: #111827; padding: 16px; text-align: center; }
+    header h1 { color: #38bdf8; }
+    nav { display: flex; justify-content: center; gap: 16px; margin-top: 10px; }
+    nav button { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; }
+    .primary { background: #38bdf8; color: black; }
+    .secondary { background: #334155; color: white; }
+
+    .container { max-width: 1100px; margin: 30px auto; padding: 0 16px; }
+    .card { background: #1e293b; padding: 16px; border-radius: 12px; margin-bottom: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+    input, select { width: 100%; padding: 8px; margin: 6px 0 12px; border-radius: 6px; border: none; }
+    label { font-size: 14px; color: #94a3b8; }
+    button { padding: 10px; border: none; border-radius: 6px; cursor: pointer; }
+    .btn { background: #22c55e; color: white; width: 100%; }
+    .btn-danger { background: #ef4444; color: white; }
+    .hidden { display: none; }
+    .car-title { font-weight: bold; font-size: 18px; color: #facc15; }
+    footer { text-align: center; padding: 20px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🚗 Car Rental Management</h1>
+  <nav>
+    <button class="primary" onclick="showSection('cars')">Browse Cars</button>
+    <button class="secondary" onclick="showSection('login')">Login</button>
+    <button class="secondary" onclick="showSection('register')">Register</button>
+    <button class="secondary" onclick="showSection('booking')">Book Car</button>
+  </nav>
+</header>
+
+<div class="container">
+
+  <!-- Cars Section -->
+  <section id="carsSection">
+    <div class="card">
+      <h2>Available Cars</h2>
+      <button class="btn" onclick="loadCars()">Refresh Cars</button>
+    </div>
+    <div id="carsGrid" class="grid"></div>
+  </section>
+
+  <!-- Login Section -->
+  <section id="loginSection" class="hidden">
+    <div class="card">
+      <h2>Login</h2>
+      <label>Email</label>
+      <input type="email" id="loginEmail" />
+      <label>Password</label>
+      <input type="password" id="loginPassword" />
+      <button class="btn" onclick="login()">Login</button>
+      <p id="loginMsg"></p>
+    </div>
+  </section>
+
+  <!-- Register Section -->
+  <section id="registerSection" class="hidden">
+    <div class="card">
+      <h2>Create Account</h2>
+      <label>Name</label>
+      <input type="text" id="regName" />
+      <label>Email</label>
+      <input type="email" id="regEmail" />
+      <label>Password</label>
+      <input type="password" id="regPassword" />
+      <button class="btn" onclick="register()">Register</button>
+      <p id="regMsg"></p>
+    </div>
+  </section>
+
+  <!-- Booking Section -->
+  <section id="bookingSection" class="hidden">
+    <div class="card">
+      <h2>Book a Car</h2>
+      <label>User ID</label>
+      <input type="number" id="bookUserId" />
+      <label>Car ID</label>
+      <input type="number" id="bookCarId" />
+      <label>Start Date</label>
+      <input type="date" id="bookStart" />
+      <label>End Date</label>
+      <input type="date" id="bookEnd" />
+      <button class="btn" onclick="bookCar()">Confirm Booking</button>
+      <p id="bookMsg"></p>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  © 2026 Car Rental System • Frontend Demo
+</footer>
+
+<script>
+const API = "http://127.0.0.1:5000/api";
+
+function showSection(name) {
+  document.getElementById('carsSection').classList.add('hidden');
+  document.getElementById('loginSection').classList.add('hidden');
+  document.getElementById('registerSection').classList.add('hidden');
+  document.getElementById('bookingSection').classList.add('hidden');
+
+  if (name === 'cars') document.getElementById('carsSection').classList.remove('hidden');
+  if (name === 'login') document.getElementById('loginSection').classList.remove('hidden');
+  if (name === 'register') document.getElementById('registerSection').classList.remove('hidden');
+  if (name === 'booking') document.getElementById('bookingSection').classList.remove('hidden');
+}
+
+// =============================
+// 🚗 Load Cars
+// =============================
+async function loadCars() {
+  const res = await fetch(`${API}/cars`);
+  const cars = await res.json();
+  const grid = document.getElementById('carsGrid');
+  grid.innerHTML = '';
+
+  cars.forEach(car => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `
+      <div class="car-title">${car.brand} ${car.model}</div>
+      <p>Category: ${car.category || 'N/A'}</p>
+      <p>Price/Day: ₹${car.price_per_day}</p>
+      <p>Status: ${car.is_available ? 'Available' : 'Booked'}</p>
+      <p>Car ID: ${car.id}</p>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+// =============================
+// 🔐 Register
+// =============================
+async function register() {
+  const data = {
+    name: regName.value,
+    email: regEmail.value,
+    password: regPassword.value
+  };
+
+  const res = await fetch(`${API}/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+
+  const msg = await res.json();
+  regMsg.textContent = msg.message || msg.error;
+}
+
+// =============================
+// 🔐 Login
+// =============================
+async function login() {
+  const data = {
+    email: loginEmail.value,
+    password: loginPassword.value
+  };
+
+  const res = await fetch(`${API}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+
+  const msg = await res.json();
+  loginMsg.textContent = msg.message || msg.error;
+
+  if (msg.user_id) {
+    localStorage.setItem('user_id', msg.user_id);
+  }
+}
+
+// =============================
+// 📅 Book Car
+// =============================
+async function bookCar() {
+  const data = {
+    user_id: Number(bookUserId.value),
+    car_id: Number(bookCarId.value),
+    start_date: bookStart.value,
+    end_date: bookEnd.value
+  };
+
+  const res = await fetch(`${API}/book`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+
+  const msg = await res.json();
+  bookMsg.textContent = msg.message
+    ? `${msg.message} | Total: ₹${msg.total_price}`
+    : msg.error;
+}
+
+// Load cars on start
+loadCars();
+</script>
+
+</body>
+</html>
